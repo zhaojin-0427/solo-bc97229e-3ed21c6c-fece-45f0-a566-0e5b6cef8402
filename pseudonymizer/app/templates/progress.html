@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}批次进度 - 假名化平台{% endblock %}
+{% block content %}
+<div class="card" id="app" data-batch-id="{{ batch.batch_id }}"
+     data-status-url="{{ url_for('batch_status', batch_id=batch.batch_id) }}">
+  <h2>批次进度</h2>
+  <p>批次号：<code class="mono">{{ batch.batch_id }}</code></p>
+  <p>原始文件：{{ batch.original_name }}</p>
+
+  <p>状态：<span class="pill {{ batch.status }}" id="status-pill">{{ status_labels[batch.status] }}</span></p>
+
+  <div style="margin:16px 0;">
+    <span class="stat">数据行数 <b id="row-count">{{ batch.row_count }}</b></span>
+    <span class="stat">新增映射 <b id="new-mappings">{{ batch.new_mappings }}</b></span>
+    <span class="stat">复用映射 <b id="reuse-mappings">{{ batch.reuse_mappings }}</b></span>
+  </div>
+
+  <div id="error-box" {% if batch.status != 'failed' %}hidden{% endif %}>
+    <div class="err-detail" id="error-text">{{ batch.error or '' }}</div>
+  </div>
+
+  <div id="actions" style="margin-top:18px;">
+    {% if batch.status == 'success' %}
+      <a class="btn" href="{{ url_for('download', batch_id=batch.batch_id) }}">下载假名化 CSV</a>
+    {% elif batch.status == 'processing' %}
+      <p class="muted">转换进行中，页面每 1.5 秒自动刷新状态……慢转换不会阻塞其他批次。</p>
+    {% else %}
+      <p class="muted">批次失败，未生成可下载文件，也未产生可查映射。</p>
+    {% endif %}
+    <a class="btn secondary" href="{{ url_for('index') }}">返回列表</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  const root = document.getElementById('app');
+  const url = root.dataset.statusUrl;
+  const labels = {processing: '转换中', success: '成功', failed: '失败'};
+  async function poll() {
+    try {
+      const resp = await fetch(url, {cache: 'no-store'});
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const pill = document.getElementById('status-pill');
+      pill.className = 'pill ' + data.status;
+      pill.textContent = data.status_text;
+      document.getElementById('row-count').textContent = data.row_count;
+      document.getElementById('new-mappings').textContent = data.new_mappings;
+      document.getElementById('reuse-mappings').textContent = data.reuse_mappings;
+      const errBox = document.getElementById('error-box');
+      if (data.status === 'failed') {
+        errBox.hidden = false;
+        document.getElementById('error-text').textContent = data.error || '未知错误';
+      }
+      if (data.status !== 'processing') {
+        location.reload();
+        return;
+      }
+    } catch (e) { /* 网络抖动忽略，下一轮再试 */ }
+    setTimeout(poll, 1500);
+  }
+  if (document.getElementById('status-pill').classList.contains('processing')) {
+    setTimeout(poll, 1500);
+  }
+})();
+</script>
+{% endblock %}

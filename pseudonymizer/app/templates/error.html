@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>操作无法完成</h2>
+  <div class="err-detail">{{ message }}</div>
+  <p style="margin-top:16px;"><a class="btn secondary" href="{{ url_for('index') }}">返回首页</a></p>
+</div>
+{% endblock %}

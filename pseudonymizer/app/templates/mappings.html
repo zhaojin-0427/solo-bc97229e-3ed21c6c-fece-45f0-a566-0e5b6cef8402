@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}正式映射查询 - 假名化平台{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>按原号查询正式映射</h2>
+  <p class="muted">仅返回已成功发布批次中的正式编号；转换中或失败批次的预留映射不可见。</p>
+  <form method="get" action="{{ url_for('mappings_page') }}">
+    <input type="text" name="original_id" value="{{ original }}"
+           placeholder="输入原始样本号，例如 S001" required>
+    <button class="btn" type="submit">查询</button>
+  </form>
+
+  {% if original %}
+    <div style="margin-top:20px;">
+    {% if result %}
+      <table>
+        <tr><th style="width:160px;">原号</th><td class="mono">{{ result.original_id }}</td></tr>
+        <tr><th>对外假名 (UUID4)</th><td class="mono">{{ result.pseudonym }}</td></tr>
+        <tr><th>首次发布批次</th><td class="mono">{{ result.batch_id }}</td></tr>
+        <tr><th>发布时间 (UTC)</th><td>{{ result.created_at }}</td></tr>
+      </table>
+    {% else %}
+      <div class="err-detail">未找到原号 <code>{{ original }}</code> 的正式映射：批次尚未成功，或该原号不存在。</div>
+    {% endif %}
+    </div>
+  {% endif %}
+
+  <p style="margin-top:18px;" class="muted">
+    JSON 接口：<code>GET /api/mappings?original_id=S001</code>
+  </p>
+</div>
+{% endblock %}

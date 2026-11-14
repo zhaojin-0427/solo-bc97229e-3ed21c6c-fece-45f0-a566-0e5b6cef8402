@@ -1,0 +1,25 @@
+services:
+  pseudonymizer:
+    build: .
+    image: pseudonymizer:latest
+    container_name: pseudonymizer
+    ports:
+      - "8000:8000"
+    environment:
+      PSEUDO_DATA_DIR: /data
+      PSEUDO_WORKER_THREADS: "4"
+      # 演示用慢转换耗时(秒/批次)，便于观察并行进度；生产可设为 0
+      PSEUDO_CONVERT_DELAY: "2"
+      PSEUDO_MAX_UPLOAD_MB: "50"
+    volumes:
+      - pseudo-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/').status==200 else sys.exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 8s
+
+volumes:
+  pseudo-data:

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>上传检测数据批次（CSV）</h2>
+  <form class="upload-box" method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+    <p class="muted">
+      表头须包含 <code>样本号</code>（非空）与 <code>来源样本号</code>（可空），可附 <code>检测值</code> 等任意其他列；
+      行序与重复行原样保留，仅替换两个编号列。
+    </p>
+    <input type="file" name="file" accept=".csv,text/csv" required>
+    <br>
+    <button class="btn" type="submit">上传并转换</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>批次列表（共 {{ batches|length }} 个）</h2>
+  {% if batches %}
+  <table>
+    <thead>
+      <tr>
+        <th>批次号</th><th>原始文件</th><th>状态</th><th>行数</th>
+        <th>新增/复用映射</th><th>更新时间</th><th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for b in batches %}
+      <tr>
+        <td class="mono">{{ b.batch_id }}</td>
+        <td>{{ b.original_name }}</td>
+        <td><span class="pill {{ b.status }}">{{ status_labels[b.status] }}</span></td>
+        <td>{{ b.row_count }}</td>
+        <td>{{ b.new_mappings }} / {{ b.reuse_mappings }}</td>
+        <td class="muted">{{ b.updated_at }}</td>
+        <td>
+          <a href="{{ url_for('progress_page', batch_id=b.batch_id) }}">详情</a>
+          {% if b.status == 'success' %}
+            · <a href="{{ url_for('download', batch_id=b.batch_id) }}">下载</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">暂无批次，请先上传 CSV。</p>
+  {% endif %}
+</div>
+{% endblock %}
